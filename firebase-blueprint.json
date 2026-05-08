@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account information and identity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the user." },
+        "email": { "type": "string", "format": "email", "description": "Unique email address." },
+        "passwordHash": { "type": "string", "description": "Hashed password for authentication." },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "Access level of the user." },
+        "status": { "type": "string", "enum": ["active", "blocked"], "description": "Account status." },
+        "lastLogin": { "type": "string", "format": "date-time", "description": "ISO timestamp of last login." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role", "status"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User's financial wallet for demo balance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Reference to the User." },
+        "balance": { "type": "number", "description": "Current demo balance." },
+        "currency": { "type": "string", "description": "Currency code (default PKR)." },
+        "status": { "type": "string", "enum": ["active", "frozen"] },
+        "totalDeposits": { "type": "number" },
+        "totalWithdrawals": { "type": "number" },
+        "totalTransfersIn": { "type": "number" },
+        "totalTransfersOut": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "balance", "currency", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Records of deposits, withdrawals, and transfers.",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "description": "Unique logic ID." },
+        "senderId": { "type": "string", "description": "User ID of the sender (optional for deposits)." },
+        "receiverId": { "type": "string", "description": "User ID of the receiver (optional for withdrawals)." },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["deposit", "withdrawal", "transfer", "refund", "fee", "billPayment"] },
+        "status": { "type": "string", "enum": ["pending", "successful", "failed", "flagged"] },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "suspiciousFlag": { "type": "boolean" },
+        "suspiciousReasons": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionId", "amount", "type", "status", "createdAt"]
+    },
+    "LoanApplication": {
+      "title": "Loan Application",
+      "description": "A user's application for a rent deposit loan.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "rentAmount": { "type": "number" },
+        "advanceMonths": { "type": "number" },
+        "securityMonths": { "type": "number" },
+        "tenure": { "type": "number" },
+        "totalLoanAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "disbursed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "totalLoanAmount", "status"]
+    },
+    "Repayment": {
+      "title": "Repayment",
+      "description": "A scheduled or completed repayment for a loan.",
+      "type": "object",
+      "properties": {
+        "loanId": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "paid", "overdue"] },
+        "paidAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["loanId", "userId", "amount", "dueDate", "status"]
+    }
+  },
+  "firestore": {
+    "users": { "schema": "User", "description": "Collection for all system users." },
+    "wallets": { "schema": "Wallet", "description": "Collection for user wallets." },
+    "transactions": { "schema": "Transaction", "description": "Collection for all financial records." },
+    "loan_applications": { "schema": "LoanApplication", "description": "Collection for loan applications." },
+    "repayments": { "schema": "Repayment", "description": "Collection for repayment schedules." }
+  }
+}

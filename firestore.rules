@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // Note: The backend is currently unauthenticated in Firebase Auth.
+    // To allow registration and core features via the Express API, 
+    // we must allow specific operations.
+    
+    match /users/{userId} {
+      // Registration: check for duplicate email requires 'list'
+      // Login: find user by email requires 'list'
+      allow list: if true; 
+      allow get: if true;
+      
+      // Create user doc during registration
+      allow create: if incoming().role == 'user'
+                    && incoming().status == 'active'
+                    && incoming().email is string
+                    && incoming().email.size() > 5
+                    && incoming().name is string
+                    && incoming().name.size() > 1;
+                    
+      // Toggle status (Admin feature)
+      allow update: if incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    match /wallets/{userId} {
+      allow get: if true;
+      allow create: if incoming().userId == userId
+                    && incoming().balance >= 0
+                    && incoming().currency == 'PKR'
+                    && incoming().status == 'active';
+      
+      // Wallet updates for transactions
+      allow update: if incoming().diff(existing()).affectedKeys().hasAny(['balance', 'totalDeposits', 'totalWithdrawals', 'totalTransfersIn', 'totalTransfersOut', 'updatedAt']);
+    }
+
+    match /transactions/{txnId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if incoming().amount > 0
+                    && incoming().type in ['deposit', 'withdrawal', 'transfer', 'refund', 'fee', 'billPayment']
+                    && incoming().status in ['pending', 'successful', 'failed', 'flagged'];
+      
+      allow update: if incoming().diff(existing()).affectedKeys().hasOnly(['status', 'suspiciousFlag', 'suspiciousReasons']);
+    }
+
+    match /loan_applications/{loanId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if true; // Backend handles verification
+      allow update: if true;
+    }
+
+    match /repayments/{repayId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if true;
+      allow update: if true;
+    }
+  }
+}
